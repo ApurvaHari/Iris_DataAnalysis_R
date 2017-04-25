@@ -1,0 +1,172 @@
+---
+title: "Final"
+author: "Apurva Hari"
+date: "August 23, 2016"
+output: pdf_document
+
+---
+
+#### Consider Anscombe's Quartet, a dataset included with R, designed by a mathematician to demonstrate the dangers in relying only on statistical measurements of a rstdataset
+
+```{r}
+#reading the dataset Anscombe
+data_set <- anscombe
+head(data_set)
+
+#reshaping the data so that each (x,y) pair are displayed together
+mydata=with(anscombe,data.frame(xVal=c(x1,x2,x3,x4), yVal=c(y1,y2,y3,y4), group=gl(4,nrow(anscombe))))
+
+#Finding out the mean and standard deviation of each (x,y) pair
+aggregate(.~group,data=mydata,mean)
+aggregate(.~group,data=mydata,sd)
+
+#Finding out the correlation of each quartet i.e. (x,y) pair
+sapply(1:4, function(x) cor(anscombe[, x], anscombe[, x+4]))
+
+#Applying a linear model on each quartet
+lm1 <- lm(y1 ~ x1, data = anscombe)
+lm2 <- lm(y2 ~ x2, data = anscombe)
+lm3 <- lm(y3 ~ x3, data = anscombe)
+lm4 <- lm(y4 ~ x4, data = anscombe)
+
+#Finding the summary of each linear model
+summary(lm1)
+summary(lm2)
+summary(lm3)
+summary(lm4)
+
+#Plotting each of the (x,y) pairs separately and fitting a line through each quartet
+library(ggplot2)
+library(gridExtra)
+
+plt1 <- ggplot(anscombe) + geom_point(aes(x1, y1), color = "red", size = 3) + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "green") + expand_limits(x = 0, y = 0) + labs(title = "dataset 1")
+
+plt2 <- ggplot(anscombe) + geom_point(aes(x2, y2), color = "red", size = 3) + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "green") + expand_limits(x = 0, y = 0) + labs(title = "dataset 2")
+
+plt3 <- ggplot(anscombe) + geom_point(aes(x3, y3), color = "red", size = 3) + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "green") + expand_limits(x = 0, y = 0) + labs(title = "dataset 3")
+
+plt4 <- ggplot(anscombe) + geom_point(aes(x4, y4), color = "red", size = 3) + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "green") + expand_limits(x = 0, y = 0) + labs(title = "dataset 4")
+
+grid.arrange(plt1, plt2, plt3, plt4, top = "Anscombe's Quartet")
+```
+
+##### data set 1 is clearly linear with some scatter 
+##### data set 2 is clearly quadratic  
+##### data set 3 has an "outlier" 
+##### data set 4 -is not linear at all.
+
+
+
+#### Find a dataset pertinent to your work and/or interests, which will be suitable for analysis by ONE of the following:  linear regression
+
+#### Response -I chose to work on the iris dataset. 
+#### This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris.The species are Iris setosa, versicolor, and virginica. This is a very well-known dataset and is widely used. I chose this, as it has well established data that will help me understand how to explore data and also fit a linear model for it. 
+
+
+
+####Data Exploration of the Iris dataset.Execute the chosen analysis:   
+####Linear simple or multiple regression:  fitting model of all or chosen predictors, maybe some with interactions, maybe using quadratic or log transformations, if appropriate
+
+
+``` {r}
+
+#Checking the dimensionality
+dim(iris)
+#Structure of iris
+str(iris)
+#getting the first 5 rows
+iris[1:5,]
+#Distribution of every variable
+summary(iris)
+#Frequency
+table(iris$Species)
+#covariance of 2 variables
+cov(iris$Petal.Length,iris$Sepal.Length)
+#correlation between 2 variables
+cor(iris$Sepal.Length,iris$Petal.Length)
+#mean of all the flowers
+aggregate(iris[,1:4], by=list("Species" = iris$Species), mean)
+
+
+#pie chart
+pie(table(iris$Species))
+#Histogram
+hist(iris$Petal.Length)
+#density
+plot(density(iris$Sepal.Length))
+#Scatter plot
+plot(iris$Petal.Length,iris$Petal.Width)
+#Pair Plot
+pairs(iris)
+```
+#### Execute the chosen analysis:
+#### Linear simple or multiple regression-fitting model of all or chosen predictors, maybe some with interactions, maybe using quadratic or log transformations, if appropriate. Evaluate your results, and possibly try some and evaluate minor refinements.  
+
+```{r}
+
+#Trying a linear regression to predict the petal width
+fit <- lm(Petal.Width ~ Petal.Length, data=iris)
+class(fit)
+summary(fit)
+
+coefficients(fit) # model coefficients
+predict(fit) # fitted predictions
+predict(fit, newdata=data.frame(Petal.Length=seq(1, 2, by=0.1)))
+confint(fit, level=0.95) # Confidence Intervals for model parameters 
+fitted(fit) # predicted values
+residuals(fit) # residuals
+influence(fit) # regression diagnostics
+
+par(mfrow=c(2,2))
+plot(fit)
+
+
+#Trying a Multiple Linear Regression
+fit2 <- lm(Petal.Width ~ Petal.Length + Sepal.Length + Sepal.Width, data=iris)
+summary(fit2) # show results
+
+#Finding the Interaction Terms and do a linear fit
+
+fit2int <- lm(Petal.Width ~ Petal.Length + Sepal.Length + Sepal.Width + Petal.Length:Sepal.Length, data=iris)
+
+#Analyzing covariance using linear regression
+fit3 <- lm(Petal.Width ~ Petal.Length + Sepal.Length + Sepal.Width + Species, data=iris)
+summary(fit3)
+```
+
+#### Evaluate your results, and possibly try some and evaluate minor refinements.  Use graphs of the model (Kabacoff, Sec. 8.3.2),  assess basic assumptions like , normality, independence, linearity, homoscedasticity; gvlma() in package "gvlma";  look for and possibly deal with outliers, high-leverage points, influential observations.  
+```{r}
+#Evaluating regression using plots
+library(car)
+#Checking the Homoscedasticity of the fitted model
+ncvTest(fit)
+spreadLevelPlot(fit) #creating a scatter-plot
+
+#Using crplots to check for linearity
+crPlots(fit)
+crPlots(fit3)
+
+#Global validation of the linear model assumption
+library(gvlma)
+
+gvlmodel <- gvlma(fit)
+summary(gvlmodel)
+
+
+gvlmodel2 <- gvlma(fit3)
+summary(gvlmodel2)
+
+#Checking Outliers for a few of the linear models
+
+outlierTest(fit)
+
+outlierTest(fit2)
+
+outlierTest(fit3)
+
+```
+
+
+
+
+
